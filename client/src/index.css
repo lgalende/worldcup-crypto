@@ -79,6 +79,76 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+.bronze {
+  background: linear-gradient(135deg,  #d19c35 0%,#f7e6c5 50%,#e8b558 100%);
+  border: 1px solid #e6b86a;
+}
+
+.silver {
+  background: linear-gradient(135deg,  #c0c0c0 0%,#e6e6e6 50%,#d0d0d0 100%);
+  border: 1px solid #d0d0d0;
+}
+
+.gold {
+  background: linear-gradient(135deg,  #d4af37 0%,#f7e6c5 50%,#e8b558 100%);
+  border: 1px solid #e6b86a;
+}
+
+.diamond {
+  background: linear-gradient(135deg,  #b9f2ff 0%,#e6f7ff 50%,#a3e8ff 100%);
+  border: 1px solid #a3e8ff;
+}
+
+.ruby {
+  background: linear-gradient(135deg,  #ff0000 0%,#ffcccc 50%,#ff6666 100%);
+  border: 1px solid #ff6666;
+}
+
+.sapphire {
+  background: linear-gradient(135deg,  #0000ff 0%,#ccccff 50%,#6666ff 100%);
+  border: 1px solid #6666ff;
+}
+
+.emerald {
+  background: linear-gradient(135deg,  #00ff00 0%,#ccffcc 50%,#66ff66 100%);
+  border: 1px solid #66ff66;
+}
+
+.bronze2 {
+  background: radial-gradient(ellipse farthest-corner at right bottom, #D19C35 0%, #f7d185 8%, #E8B558 30%, #B88A3F 40%, transparent 80%),
+                radial-gradient(ellipse farthest-corner at left top, #5d4a1f 0%,  #6e5100 10%, #6e4d00 100%);
+}
+
+.silver2 {
+  background: radial-gradient(ellipse farthest-corner at right bottom, #C0C0C0 0%, #E6E6E6 8%, #D0D0D0 30%, #A0A0A0 40%, transparent 80%),
+                radial-gradient(ellipse farthest-corner at left top, #ffffff 0%, #E6E6E6 8%, #c4c3c3 30%, #A0A0A0 40%, transparent 80%);
+}
+
+.gold2 {
+  background: radial-gradient(ellipse farthest-corner at right bottom, #f8e9a6 0%, #bdaa85 8%, #c2a35e 30%, #a58b4d 40%, transparent 80%),
+                radial-gradient(ellipse farthest-corner at left top, #ffffff 0%, #FFFFAC 8%, #D1B464 25%, #5d4a1f 62.5%, #5d4a1f 100%);
+}
+
+.diamond2 {
+  background: radial-gradient(ellipse farthest-corner at right bottom, #B9F2FF 0%, #E6F7FF 8%, #A3E8FF 30%, #7BC9FF 40%, transparent 80%),
+                radial-gradient(ellipse farthest-corner at left top, #FFFFFF 0%, #FFFFAC 8%, #D1B464 25%, #5d4a1f 62.5%, #5d4a1f 100%);
+}
+
+.ruby2 {
+  background: radial-gradient(ellipse farthest-corner at right bottom, #FF0000 0%, #FFCCCC 8%, #FF6666 30%, #CC0000 40%, transparent 80%),
+                radial-gradient(ellipse farthest-corner at left top, #FFFFFF 0%, #FFFFAC 8%, #D1B464 25%, #5d4a1f 62.5%, #5d4a1f 100%);
+}
+
+.sapphire2 {
+  background: radial-gradient(ellipse farthest-corner at right bottom, #0000FF 0%, #CCCCFF 8%, #6666FF 30%, #0000CC 40%, transparent 80%),
+                radial-gradient(ellipse farthest-corner at left top, #FFFFFF 0%, #FFFFAC 8%, #D1B464 25%, #5d4a1f 62.5%, #5d4a1f 100%);
+}
+
+.emerald2 {
+  background: radial-gradient(ellipse farthest-corner at right bottom, #00FF00 0%, #a2ffa2 8%, #34ca34 30%, #00CC00 40%, transparent 80%),
+                radial-gradient(ellipse farthest-corner at left top, #191919 0%, #5cb25c 10%, #115411 50%);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
