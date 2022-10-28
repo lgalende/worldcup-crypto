@@ -4,10 +4,11 @@ const App = () => (
   <div className="min-h-screen">
     <div className="gradient-bg-welcome">
       <Navbar />
+      {/* Si tiene NFT Welcome sino WelcomeUser */}
       <Welcome />
     </div>
-    <Services />
-    <Transactions />
+    {/* <Services />
+    <Transactions /> */}
     <Footer />
   </div>
 );

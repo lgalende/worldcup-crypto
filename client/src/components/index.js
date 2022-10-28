@@ -4,4 +4,6 @@ export { default as Welcome } from "./Welcome";
 export { default as Footer } from "./Footer";
 export { default as Services } from "./Services";
 export { default as Transactions } from "./Transactions";
-export { default as Pass } from "./Passes";
+export { default as Passes } from "./Passes";
+export { default as Accordion } from "./Accordion";
+export { default as Tabs } from "./Tabs";

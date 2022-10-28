@@ -75,13 +75,13 @@ const Passes = () => {
         <div className="flex flex-wrap justify-center items-center mt-10">
           <PassCard
           type="Bronze"
-          price="2"
+          price="1"
           description="One round"
           color="bronze2"
           />
           <PassCard
           type="Silver"
-          price="2.5"
+          price="2"
           description="One round, unlimited"
           color="silver2"
           />

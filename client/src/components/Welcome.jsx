@@ -5,7 +5,7 @@ import { BsInfoCircle } from "react-icons/bs";
 
 import { TransactionContext } from "../context/TransactionContext";
 import { shortenAddress } from "../utils/shortenAddress";
-import { Loader, Pass } from ".";
+import { Loader, Passes, Accordion, Tabs } from ".";
 
 const companyCommonStyles = "min-h-[70px] sm:px-0 px-2 sm:min-w-[120px] flex justify-center items-center border-[0.5px] border-gray-400 text-sm font-light text-white";
 
@@ -58,9 +58,14 @@ const Welcome = () => {
           )}
           {/* <div className="flex mf:flex-row flex-col items-start justify-between md:p-20 py-12 px-4"> */}
           <div className="flex flex-wrap justify-center items-center mt-10">
-              <Pass />
+              <Passes />
+          </div>
+          <div className="flex flex-wrap justify-start items-start mt-10">
+            <h1 className="mt-2 mb-3 text-white text-4xl py-3">Rounds</h1>
+            <Tabs/>
           </div>
         </div>
+
 
       </div>
     </div>
