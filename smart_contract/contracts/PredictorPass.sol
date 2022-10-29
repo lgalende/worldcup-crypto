@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.1;
 
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
@@ -13,28 +13,38 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
   constructor()
     ERC721("Predictor Pass", "PP")
-  {}
+  {
+    _tokenIds.increment();  // start at 1
+    passes.push(Pass(PassType.Bronze, 0));  // belongs to nobody
+    
+    // initialize mapping fees
+    fees[PassType.Bronze] = 0.01 ether;
+    fees[PassType.Silver] = 0.02 ether;
+    fees[PassType.Gold] = 0.03 ether;
+    fees[PassType.Diamond] = 0.05 ether;
+  }
 
   enum PassType { Bronze, Silver, Gold, Diamond }
 
-  // It’s cheaper to use arrays if you are using smaller elements 
-  // like uint8 (enum is a uint8) which can be packed together.
-  PassType[4] public fees = [0.01 ether, 0.02 ether, 0.03 ether, 0.05 ether];
+  // mapping is cheaper than arrays
+  mapping(PassType => uint256) public fees;
 
   struct Pass {
     PassType passType;  // uint8
-    uint256 id;
     // TODO: country and jersey number
+    uint256 id;
   }
 
-  Pass[] public passes;
-
-  // The NFT which each user holds.
   // The logic of the application requires knowing the type of pass.
-  // If this weren't the case, we could just use the ERC721 tokenURI.
-  // FIXME: mapping(address => Pass) public ownerPass;
+  // The NFT which each user holds.
+  mapping(address => uint256) public playerPassId;
+
+  Pass[] public passes; // 0 is reserved
+
+  mapping (address => uint8) public discounts;
 
   event NewPass(address indexed owner, uint256 id, PassType passType);
+
 
   // Helpers
   function _createRandomNum(uint256 _mod) internal view returns (uint256) {
@@ -54,28 +64,29 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   // Creation
-  function _createPass(PassType _passType) internal returns (uint256){
-    // uint8 country = uint8(_createRandomNum(32));  // 0-32
+  function _mintPass(PassType _passType/*, string memory tokenURI*/) internal returns (uint256) {
+    // uint8 country = uint8(_createRandomNum(32));  // 0-31
     // uint8 jerseyNumber = uint8(_createRandomNum(25)) + 1; // 1-25
     
     _tokenIds.increment();
     uint256 newItemId = _tokenIds.current();
 
-    Pass memory newPass = Pass(newItemId, _passType);
+    Pass memory newPass = Pass(_passType, newItemId);
     passes.push(newPass);
-    // FIXME: ownerPass[msg.sender] = newPass;
+    playerPassId[msg.sender] = newItemId;
     _mint(msg.sender, newItemId); // _safeMmint is more expensive
-    _setTokenURI(newItemId, tokenURI);
+    // TODO _setTokenURI(newItemId, tokenURI);
+    // tokenURI is a string that should resolve to a JSON document that describes the NFT's metadata
     
     emit NewPass(msg.sender, newItemId, _passType);
 
     return newItemId;
   }
 
-  function createPass(PassType _passType) public payable {
-    // TODO: DISCOUNTS !!!
-    require(msg.value >= fees[_passType]);
-    _createPass(_passType);
+  function mintPass(PassType _passType) public payable {
+    // TODO: check discounts logic
+    require(100 * msg.value >= fees[_passType] * (100 - discounts[msg.sender]), "Not enough ETH sent");
+    _mintPass(_passType);
   }
 
   // Getters
@@ -87,23 +98,28 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     return passes[_id];
   }
 
-  // FIXME
-  // function getPassByUser(address _user) public view returns (Pass memory) {
-  //   return ownerPass[_user];
-  // }
+  function getDiscount(address _addr) external view returns (uint8) {
+    return discounts[_addr];
+  }
 
-  // function getOwnerLips(address _owner) public view returns (Lip[] memory) {
-  //   Lip[] memory result = new Lip[](balanceOf(_owner));
-  //   uint256 counter = 0;
-  //   for (uint256 i = 0; i < lips.length; i++) {
-  //     if (ownerOf(i) == _owner) {
-  //       result[counter] = lips[i];
-  //       counter++;
-  //     }
-  //   }
-  //   return result;
-  // }
+  function getPlayerPassId(address _addr) external view returns (uint256) {
+    return playerPassId[_addr];
+  }
+
+  function getPlayerPass(address _addr) external view returns (Pass memory) {
+    require (playerPassId[_addr] != 0, "User does not have a pass");
+    return passes[playerPassId[_addr]];
+  }
 
   // Actions
   // TODO: burn
+
+  function addDiscount(address _addr, uint8 _discount) external onlyOwner {
+    require(_discount <= 100);
+    discounts[_addr] = _discount;
+  }
+
+  function removeDiscount(address _addr) external onlyOwner {
+    discounts[_addr] = 0;
+  }
 }

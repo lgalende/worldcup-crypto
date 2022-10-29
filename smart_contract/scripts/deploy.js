@@ -1,10 +1,10 @@
 const main = async () => {
-  const transactionsFactory = await hre.ethers.getContractFactory("Transactions");
-  const transactionsContract = await transactionsFactory.deploy();
+  const predictorPassFactory = await hre.ethers.getContractFactory("PredictorPass");
+  const predictorPassContract = await predictorPassFactory.deploy();
 
-  await transactionsContract.deployed();
+  await predictorPassContract.deployed();
 
-  console.log("Transactions address: ", transactionsContract.address);
+  console.log("Predictor Pass address: ", predictorPassContract.address);
 };
 
 const runMain = async () => {
