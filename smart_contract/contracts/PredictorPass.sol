@@ -11,9 +11,11 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   using Counters for Counters.Counter;
   Counters.Counter private _tokenIds;
 
-  constructor()
+  constructor(string memory _baseURI)
     ERC721("Predictor Pass", "PP")
   {
+    baseURI = _baseURI;
+
     passes.push(Pass(PassType.Bronze, 0));  // belongs to nobody
     
     // initialize mapping fees
@@ -24,6 +26,8 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   enum PassType { Bronze, Silver, Gold, Diamond }
+
+  string public baseURI;
 
   // mapping is cheaper than arrays
   mapping(PassType => uint256) public fees;
@@ -42,6 +46,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
   event NewPass(address indexed owner, uint256 id, PassType passType);
 
+  // TODO: more events
 
   // Helpers
   function _createRandomNum(uint256 _mod) internal view returns (uint256) {
@@ -60,8 +65,40 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     _owner.transfer(address(this).balance);
   }
 
+  // Turns uint8 into string
+  function uintToStr(uint8 _i) internal pure returns (string memory _uintAsString) {
+    if (_i == 0) {
+      return '0';
+    }
+    uint8 j = _i;
+    uint8 len;
+    while (j != 0) {
+      len++;
+      j /= 10;
+    }
+    bytes memory bstr = new bytes(len);
+    uint256 k = len;
+    while (_i != 0) {
+      k = k - 1;
+      uint8 temp = (48 + uint8(_i - (_i / 10) * 10));
+      bytes1 b1 = bytes1(temp);
+      bstr[k] = b1;
+      _i /= 10;
+    }
+    return string(bstr);
+  }
+
+  function tokenURI(PassType _passType) public view returns (string memory) {
+    return string(abi.encodePacked(baseURI, '/', uintToStr(uint8(_passType)), '.json'));
+  }
+
+    function setBaseURI(string memory _baseURI) external onlyOwner {
+    baseURI = _baseURI;
+  }
+
+
   // Creation
-  function _mintPass(PassType _passType, address _addr/*, string memory tokenURI*/) internal returns (uint256) {
+  function _mintPass(PassType _passType, address _addr) internal returns (uint256) {
     require(_addr != address(0), "ERC721: mint to the zero address");
 
     // uint8 country = uint8(_createRandomNum(32));  // 0-31
@@ -74,9 +111,10 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     _mint(_addr, newItemId); // _safeMmint is more expensive
     passes.push(newPass);
     playerPassId[_addr] = newItemId;
-    // TODO _setTokenURI(newItemId, tokenURI);
+
     // tokenURI is a string that should resolve to a JSON document that describes the NFT's metadata
-    
+    _setTokenURI(newItemId, tokenURI(_passType));
+
     emit NewPass(_addr, newItemId, _passType);
 
     return newItemId;
@@ -96,6 +134,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
     return _mintPass(_passType, _addr);
   }
+
 
   // Getters
   function getFees() external view returns (uint256[4] memory) {
@@ -119,6 +158,11 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     // require (playerPassId[_addr] != 0, "User does not have a pass");
     return (uint8(passes[playerPassId[_addr]].passType), passes[playerPassId[_addr]].id);
   }
+
+  function getTokenIds() external view onlyOwner returns (uint256) {
+    return _tokenIds.current();
+  }
+
 
   // Actions
   // TODO: burn
