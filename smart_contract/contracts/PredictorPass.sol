@@ -14,7 +14,6 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   constructor()
     ERC721("Predictor Pass", "PP")
   {
-    _tokenIds.increment();  // start at 1
     passes.push(Pass(PassType.Bronze, 0));  // belongs to nobody
     
     // initialize mapping fees
@@ -41,7 +40,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
   Pass[] public passes; // 0 is reserved
 
-  mapping (address => uint8) public discounts;
+  mapping (address => uint8[4]) public discounts; // array size = PassType.length
 
   event NewPass(address indexed owner, uint256 id, PassType passType);
 
@@ -64,41 +63,62 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   // Creation
-  function _mintPass(PassType _passType/*, string memory tokenURI*/) internal returns (uint256) {
+  function _mintPass(PassType _passType, address _addr/*, string memory tokenURI*/) internal returns (uint256) {
+    require(_addr != address(0), "ERC721: mint to the zero address");
+
     // uint8 country = uint8(_createRandomNum(32));  // 0-31
     // uint8 jerseyNumber = uint8(_createRandomNum(25)) + 1; // 1-25
     
-    _tokenIds.increment();
+    _tokenIds.increment();  // start at 1
     uint256 newItemId = _tokenIds.current();
 
     Pass memory newPass = Pass(_passType, newItemId);
+    _mint(_addr, newItemId); // _safeMmint is more expensive
     passes.push(newPass);
-    playerPassId[msg.sender] = newItemId;
-    _mint(msg.sender, newItemId); // _safeMmint is more expensive
+    playerPassId[_addr] = newItemId;
     // TODO _setTokenURI(newItemId, tokenURI);
     // tokenURI is a string that should resolve to a JSON document that describes the NFT's metadata
     
-    emit NewPass(msg.sender, newItemId, _passType);
+    emit NewPass(_addr, newItemId, _passType);
 
     return newItemId;
   }
 
-  function mintPass(PassType _passType) public payable {
+  function mintPass(PassType _passType) external payable {
     // TODO: check discounts logic
-    require(100 * msg.value >= fees[_passType] * (100 - discounts[msg.sender]), "Not enough ETH sent");
-    _mintPass(_passType);
+    // FIXME: Discounts for each type of pass
+    require(_passType >= PassType.Bronze && _passType <= PassType.Diamond, "Invalid pass type");
+    // FIXME: is the above require necessary? what happens if you send an invalid enum value?
+    require(100 * msg.value >= fees[_passType] * (100 - discounts[msg.sender][_passType]), "Not enough ETH sent");
+    
+    _mintPass(_passType, msg.sender);
+
+    if(discounts[msg.sender][_passType] > 0)
+      removeAllDiscounts(msg.sender);
+  }
+
+  function ownerMint(PassType _passType, address _addr) external onlyOwner returns (uint256) {
+    require(_passType >= PassType.Bronze && _passType <= PassType.Diamond, "Invalid pass type");
+    // FIXME: is the above require necessary? what happens if you send an invalid enum value?
+
+    return _mintPass(_passType, _addr);
   }
 
   // Getters
+  function getFees() external view returns (uint256[4] memory) {
+    return [fees[PassType.Bronze], fees[PassType.Silver], fees[PassType.Gold], fees[PassType.Diamond]];
+  }
+
   function getPasses() public view returns (Pass[] memory) {
     return passes;
   }
 
-  function getPass(uint256 _id) public view returns (Pass memory) {
-    return passes[_id];
+  function getPass(uint256 _id) public view returns (uint8, uint256) {
+    // require (playerPassId[_addr] != 0, "User does not have a pass");
+    return (uint8(passes[_id].passType), passes[_id].id);
   }
 
-  function getDiscount(address _addr) external view returns (uint8) {
+  function getDiscount(address _addr) external view returns (uint8[4]) {
     return discounts[_addr];
   }
 
@@ -106,20 +126,34 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     return playerPassId[_addr];
   }
 
-  function getPlayerPass(address _addr) external view returns (Pass memory) {
-    require (playerPassId[_addr] != 0, "User does not have a pass");
-    return passes[playerPassId[_addr]];
+  function getPlayerPass(address _addr) external view returns (uint8, uint256) {
+    // require (playerPassId[_addr] != 0, "User does not have a pass");
+    return (uint8(passes[playerPassId[_addr]].passType), passes[playerPassId[_addr]].id);
   }
 
   // Actions
   // TODO: burn
 
-  function addDiscount(address _addr, uint8 _discount) external onlyOwner {
+  function addDiscount(address _addr, PassType _passType, uint8 _discount) external onlyOwner {
     require(_discount <= 100);
-    discounts[_addr] = _discount;
+    discounts[_addr][_passType] = _discount;
   }
 
-  function removeDiscount(address _addr) external onlyOwner {
-    discounts[_addr] = 0;
+  function removeDiscount(address _addr, PassType _passType) public onlyOwner { //don't think I will ever use it
+    discounts[_addr][_passType] = 0;
   }
+
+  function removeAllDiscounts(address _addr) public onlyOwner {
+    delete discounts[_addr];
+  }
+
+  // TODO
+  /* 
+    setTokenUri
+    setBaseTokenUri
+    _transfer
+    _transferFrom
+    _approve
+    burn... 
+  */
 }

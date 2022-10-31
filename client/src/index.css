@@ -22,6 +22,41 @@ body {
     radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
 }
 
+.gradient-bg-welcome2 {
+  background-image: 
+    conic-gradient(rgb(136, 19, 55), rgb(23, 23, 23), rgb(180, 83, 9));
+}
+
+.gradient-bg-welcome3 {
+  background-image: 
+    conic-gradient(at center top, rgb(136, 19, 55), rgb(23, 23, 23), rgb(180, 83, 9))
+}
+
+.gradient-bg-welcome4 {
+  background-image: 
+    conic-gradient(at right top, rgb(244, 244, 245), rgb(23, 23, 23), rgb(136, 19, 55))
+}
+
+.gradient-bg-welcome5 {
+  background-image: 
+    conic-gradient(at center top, rgb(161, 161, 170), rgb(23, 23, 23), rgb(136, 19, 55))
+}
+
+.gradient-bg-welcome6 {
+  background-image: 
+    conic-gradient(rgb(161, 161, 170), rgb(23, 23, 23), rgb(136, 19, 55))
+}
+
+.gradient-bg-welcome7 {
+  background-image: 
+    conic-gradient(at center top, rgb(136, 19, 55), rgb(23, 23, 23), rgb(161, 161, 170))
+}
+
+.gradient-bg-welcome8 {
+  background-image: 
+    conic-gradient(rgb(136, 19, 55), rgb(23, 23, 23), rgb(161, 161, 170))
+}
+
 .gradient-bg-services {
   background-color:#0f0e13;
   background-image: 

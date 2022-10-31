@@ -11,6 +11,19 @@ import { shortenAddress } from "../utils/shortenAddress";
 import { Loader } from ".";
 
 const PassCard = ({ type, price, description, color }) => {
+  const { currentAccount, isLoading, connectWallet, mintPass } = useContext(TransactionContext);
+
+  const handleSubmit = (e) => {
+    // e.preventDefault(); // Prevents page refresh
+
+    if (!currentAccount /*|| !type || !price*/) return;
+    console.log(type, price, currentAccount);
+
+    // TODO: discount
+    mintPass(type, price);
+  };
+
+
   return (
     // <div className="bg-[#181918] m-4 flex flex-1
     //   2xl:min-w-[450px]
@@ -40,25 +53,38 @@ const PassCard = ({ type, price, description, color }) => {
               </div>
             </div>
             <div className="h-[1px] w-full bg-gray-400 my-2" />
-            {/*isLoading*/ false
-              ? <Loader />
+            {
+              !currentAccount ? 
+              <button
+              type="button"
+              onClick={connectWallet}
+              className="flex flex-row justify-center items-center my-5 bg-[#2952e3] p-3 rounded-full cursor-pointer hover:bg-[#2546bd]"
+            >
+              {/* <AiFillPlayCircle className="text-white mr-2" /> */}
+              <p className="text-white text-base font-semibold">
+                Connect Wallet
+              </p>
+            </button>
               : (
-                <button
-                type="button"
-                // onClick={handleSubmit}
-                className="text-white w-full mt-2 border-[1px] p-2 border-[#3d4f7c] hover:bg-[#3d4f7c] rounded-full cursor-pointer"
-                >
-                  Buy ${price}
-                </button>
-              )}
+                isLoading ? 
+                <Loader />
+                : (
+                  <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="text-white w-full mt-2 border-[1px] p-2 border-[#3d4f7c] hover:bg-[#3d4f7c] rounded-full cursor-pointer"
+                  >
+                    Buy {price} ETH
+                  </button>
+                )
+              )
+            }
           </div>
         // </div>
   );
 };
 
 const Passes = () => {
-  const { transactions, currentAccount } = useContext(TransactionContext);
-
   return (
     // <div className="flex w-full justify-center items-center 2xl:px-20 gradient-bg-transactions">
     //   <div className="flex flex-col md:p-12 py-12 px-4">
@@ -75,25 +101,25 @@ const Passes = () => {
         <div className="flex flex-wrap justify-center items-center mt-10">
           <PassCard
           type="Bronze"
-          price="1"
+          price="0.01"
           description="One round"
           color="bronze2"
           />
           <PassCard
           type="Silver"
-          price="2"
+          price="0.02"
           description="One round, unlimited"
           color="silver2"
           />
           <PassCard
           type="Gold"
-          price="3"
+          price="0.03"
           description="All rounds"
           color="gold2"
           />
           <PassCard
           type="Diamond"
-          price="5"
+          price="0.05"
           description="All rounds, unlimited"
           color="emerald2"
           />

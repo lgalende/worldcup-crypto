@@ -1,16 +1,23 @@
-import { Navbar, Welcome, Footer, Services, Transactions } from "./components";
+import React, { useContext } from "react";
 
-const App = () => (
-  <div className="min-h-screen">
-    <div className="gradient-bg-welcome">
+import { Navbar, Welcome, Footer, Services, Transactions, WelcomeUser } from "./components";
+import { TransactionContext } from "./context/TransactionContext";
+
+const App = () => {
+  const { userNFT } = useContext(TransactionContext);
+  return(
+  <div className="min-h-screen gradient-bg-welcome5">
+    <div>
       <Navbar />
-      {/* Si tiene NFT Welcome sino WelcomeUser */}
-      <Welcome />
+      {/* Si tiene NFT WelcomeUser sino Welcome */
+        userNFT ? <WelcomeUser /> : <Welcome />
+      }
     </div>
     {/* <Services />
     <Transactions /> */}
     <Footer />
   </div>
-);
+  )
+};
 
 export default App;

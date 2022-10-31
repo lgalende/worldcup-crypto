@@ -21,18 +21,6 @@ const Input = ({ placeholder, name, type, value, handleChange }) => (
 );
 
 const Welcome = () => {
-  const { currentAccount, connectWallet, handleChange, sendTransaction, formData, isLoading } = useContext(TransactionContext);
-
-  const handleSubmit = (e) => {
-    const { addressTo, amount, keyword, message } = formData;
-
-    e.preventDefault();
-
-    if (!addressTo || !amount || !keyword || !message) return;
-
-    sendTransaction();
-  };
-
   return (
     <div className="flex w-full justify-center items-center">
       {/* <div className="flex mf:flex-row flex-col items-start justify-between md:p-20 py-12 px-4"> */}
@@ -42,9 +30,9 @@ const Welcome = () => {
             Get your pass <br /> and start making predictions!
           </h1>
           <p className="text-left mt-5 text-white font-light md:w-9/12 w-11/12 text-base">
-            <i> Make Qatar 2022 matches even more exciting. </i>
+            <i> Make Qatar 2022 matches even more exciting with World Cup Crypto. </i>
           </p>
-          {!currentAccount && (
+          {/* {!currentAccount && (
             <button
               type="button"
               onClick={connectWallet}
@@ -55,7 +43,7 @@ const Welcome = () => {
                 Connect Wallet
               </p>
             </button>
-          )}
+          )} */}
           {/* <div className="flex mf:flex-row flex-col items-start justify-between md:p-20 py-12 px-4"> */}
           <div className="flex flex-wrap justify-center items-center mt-10">
               <Passes />
