@@ -40,8 +40,6 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
   Pass[] public passes; // 0 is reserved
 
-  mapping (address => uint8[4]) public discounts; // array size = PassType.length
-
   event NewPass(address indexed owner, uint256 id, PassType passType);
 
 
@@ -85,16 +83,11 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function mintPass(PassType _passType) external payable {
-    // TODO: check discounts logic
-    // FIXME: Discounts for each type of pass
     require(_passType >= PassType.Bronze && _passType <= PassType.Diamond, "Invalid pass type");
     // FIXME: is the above require necessary? what happens if you send an invalid enum value?
-    require(100 * msg.value >= fees[_passType] * (100 - discounts[msg.sender][_passType]), "Not enough ETH sent");
+    require(msg.value >= fees[_passType], "Not enough ETH sent");
     
     _mintPass(_passType, msg.sender);
-
-    if(discounts[msg.sender][_passType] > 0)
-      removeAllDiscounts(msg.sender);
   }
 
   function ownerMint(PassType _passType, address _addr) external onlyOwner returns (uint256) {
@@ -118,10 +111,6 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     return (uint8(passes[_id].passType), passes[_id].id);
   }
 
-  function getDiscount(address _addr) external view returns (uint8[4]) {
-    return discounts[_addr];
-  }
-
   function getPlayerPassId(address _addr) external view returns (uint256) {
     return playerPassId[_addr];
   }
@@ -133,19 +122,6 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
   // Actions
   // TODO: burn
-
-  function addDiscount(address _addr, PassType _passType, uint8 _discount) external onlyOwner {
-    require(_discount <= 100);
-    discounts[_addr][_passType] = _discount;
-  }
-
-  function removeDiscount(address _addr, PassType _passType) public onlyOwner { //don't think I will ever use it
-    discounts[_addr][_passType] = 0;
-  }
-
-  function removeAllDiscounts(address _addr) public onlyOwner {
-    delete discounts[_addr];
-  }
 
   // TODO
   /* 
