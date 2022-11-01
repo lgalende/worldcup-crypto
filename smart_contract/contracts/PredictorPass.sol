@@ -16,6 +16,8 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   {
     baseURI = _baseURI;
 
+    _tokenIds.increment();  // start at 1
+
     passes.push(Pass(PassType.Bronze, 0));  // belongs to nobody
     
     // initialize mapping fees
@@ -39,14 +41,13 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   // The logic of the application requires knowing the type of pass.
-  // The NFT which each user holds.
+  // The id of the NFT which each user holds.
   mapping(address => uint256) public playerPassId;
 
   Pass[] public passes; // 0 is reserved
 
   event NewPass(address indexed owner, uint256 id, PassType passType);
-
-  // TODO: more events
+  // and event Transfer from _burn and overriden functions
 
   // Helpers
   function _createRandomNum(uint256 _mod) internal view returns (uint256) {
@@ -88,23 +89,22 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     return string(bstr);
   }
 
-  function tokenURI(PassType _passType) public view returns (string memory) {
+  function getTokenURI(PassType _passType) internal view returns (string memory) {
     return string(abi.encodePacked(baseURI, '/', uintToStr(uint8(_passType)), '.json'));
   }
 
-    function setBaseURI(string memory _baseURI) external onlyOwner {
+  function setBaseURI(string memory _baseURI) external onlyOwner {
     baseURI = _baseURI;
   }
 
 
   // Creation
   function _mintPass(PassType _passType, address _addr) internal returns (uint256) {
-    require(_addr != address(0), "ERC721: mint to the zero address");
+    // require(_addr != address(0), "ERC721: mint to the zero address"); // already donde by _mint
 
     // uint8 country = uint8(_createRandomNum(32));  // 0-31
     // uint8 jerseyNumber = uint8(_createRandomNum(25)) + 1; // 1-25
     
-    _tokenIds.increment();  // start at 1
     uint256 newItemId = _tokenIds.current();
 
     Pass memory newPass = Pass(_passType, newItemId);
@@ -113,7 +113,9 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     playerPassId[_addr] = newItemId;
 
     // tokenURI is a string that should resolve to a JSON document that describes the NFT's metadata
-    _setTokenURI(newItemId, tokenURI(_passType));
+    _setTokenURI(newItemId, getTokenURI(_passType));
+
+    _tokenIds.increment();
 
     emit NewPass(_addr, newItemId, _passType);
 
@@ -123,6 +125,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   function mintPass(PassType _passType) external payable {
     require(_passType >= PassType.Bronze && _passType <= PassType.Diamond, "Invalid pass type");
     // FIXME: is the above require necessary? what happens if you send an invalid enum value?
+    // TODO: discount?
     require(msg.value >= fees[_passType], "Not enough ETH sent");
     
     _mintPass(_passType, msg.sender);
@@ -165,15 +168,64 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
 
   // Actions
-  // TODO: burn
 
-  // TODO
-  /* 
-    setTokenUri
-    setBaseTokenUri
-    _transfer
-    _transferFrom
-    _approve
-    burn... 
-  */
+  /**
+    * @dev Burns `tokenId`. See {ERC721-_burn}.
+    *
+    * Requirements:
+    *
+    * - The caller must own `tokenId` or be an approved operator.
+    */
+  function burn(uint256 tokenId) public {
+      require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
+      
+      _burn(tokenId);
+
+      _tokenIds.decrement();  // start at 1
+      Pass memory nobodyPass = Pass(PassType.Bronze, 0);
+      passes[tokenId] = nobodyPass;
+      playerPassId[ownerOf(tokenId)] = 0;
+  }
+
+
+  // Overrides
+  /**
+     * @dev See {IERC721-transferFrom}.
+     */
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override {
+        super.transferFrom(from, to, tokenId);
+        playerPassId[from] = 0;
+        playerPassId[to] = tokenId;
+    }
+
+  /**
+     * @dev See {IERC721-safeTransferFrom}.
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override {
+        safeTransferFrom(from, to, tokenId, "");
+    }
+
+    /**
+     * @dev See {IERC721-safeTransferFrom}.
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) public override {
+        super.safeTransferFrom(from, to, tokenId, data);
+        playerPassId[from] = 0;
+        playerPassId[to] = tokenId;
+    }
+
+
 }
