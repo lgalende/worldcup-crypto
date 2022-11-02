@@ -31,7 +31,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
   string public baseURI;
 
-  // mapping is cheaper than arrays
+  // mapping is usually cheaper than arrays
   mapping(PassType => uint256) public fees;
 
   struct Pass {
@@ -39,6 +39,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     // TODO: country and jersey number
     uint256 id;
   }
+  // TODO: timestamp?
 
   // The logic of the application requires knowing the type of pass.
   // The id of the NFT which each user holds.
@@ -47,7 +48,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   Pass[] public passes; // 0 is reserved
 
   event NewPass(address indexed owner, uint256 id, PassType passType);
-  // and event Transfer from _burn and overriden functions
+  // and event Transfer from _burn and transfer overriden functions
 
   // Helpers
   function _createRandomNum(uint256 _mod) internal view returns (uint256) {
@@ -99,7 +100,9 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
 
   // Creation
-  function _mintPass(PassType _passType, address _addr) internal returns (uint256) {
+  function _mintPass(PassType _passType, address _addr) internal returns (uint256) {    
+    require(playerPassId[_addr] == 0, "Player already has a pass");
+    
     // require(_addr != address(0), "ERC721: mint to the zero address"); // already donde by _mint
 
     // uint8 country = uint8(_createRandomNum(32));  // 0-31
@@ -108,7 +111,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     uint256 newItemId = _tokenIds.current();
 
     Pass memory newPass = Pass(_passType, newItemId);
-    _mint(_addr, newItemId); // _safeMmint is more expensive
+    _mint(_addr, newItemId); // _safeMmint is more expensive, but safe against smart contract interactions
     passes.push(newPass);
     playerPassId[_addr] = newItemId;
 
@@ -123,8 +126,6 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function mintPass(PassType _passType) external payable {
-    require(_passType >= PassType.Bronze && _passType <= PassType.Diamond, "Invalid pass type");
-    // FIXME: is the above require necessary? what happens if you send an invalid enum value?
     // TODO: discount?
     require(msg.value >= fees[_passType], "Not enough ETH sent");
     
@@ -132,9 +133,6 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function ownerMint(PassType _passType, address _addr) external onlyOwner returns (uint256) {
-    require(_passType >= PassType.Bronze && _passType <= PassType.Diamond, "Invalid pass type");
-    // FIXME: is the above require necessary? what happens if you send an invalid enum value?
-
     return _mintPass(_passType, _addr);
   }
 
@@ -149,7 +147,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function getPass(uint256 _id) public view returns (uint8, uint256) {
-    // require (playerPassId[_addr] != 0, "User does not have a pass");
+    require(passes[_id].id != 0, "Pass does not exist");
     return (uint8(passes[_id].passType), passes[_id].id);
   }
 
@@ -158,7 +156,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function getPlayerPass(address _addr) external view returns (uint8, uint256) {
-    // require (playerPassId[_addr] != 0, "User does not have a pass");
+    require (playerPassId[_addr] != 0, "User does not have a pass");
     return (uint8(passes[playerPassId[_addr]].passType), passes[playerPassId[_addr]].id);
   }
 
@@ -179,12 +177,14 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   function burn(uint256 tokenId) public {
       require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
       
+      address owner = ownerOf(tokenId);
+
       _burn(tokenId);
 
       _tokenIds.decrement();  // start at 1
       Pass memory nobodyPass = Pass(PassType.Bronze, 0);
       passes[tokenId] = nobodyPass;
-      playerPassId[ownerOf(tokenId)] = 0;
+      playerPassId[owner] = 0;
   }
 
 
