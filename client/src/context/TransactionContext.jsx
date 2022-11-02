@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
+import Web3Modal from 'web3modal';
+// import Portis from "@portis/web3";
 
 import { contractABI, contractAddress } from "../utils/constants";
 
@@ -7,13 +9,15 @@ export const TransactionContext = React.createContext();
 
 const { ethereum } = window;
 
-const createEthereumContract = () => {
-  const provider = new ethers.providers.Web3Provider(ethereum);
-  const signer = provider.getSigner();
-  const transactionsContract = new ethers.Contract(contractAddress, contractABI, signer);
-
-  return transactionsContract;
-};
+// const providerOptions = {
+//   portis: {
+//     package: Portis, // required
+//     options: {
+//       id: "8e23465f-c9a7-410a-92df-18b2e3d1c38f",
+//       network: "maticMumbai"
+//     }
+//   }
+// };
 
 export const TransactionsProvider = ({ children }) => {
   const [formData, setformData] = useState({ addressTo: "", amount: "", keyword: "", message: "" });
@@ -22,17 +26,95 @@ export const TransactionsProvider = ({ children }) => {
   const [transactionCount, setTransactionCount] = useState(localStorage.getItem("transactionCount"));
   const [transactions, setTransactions] = useState([]);
   const [userNFT, setUserNFT] = useState("");
+  const [contract, setContract] = useState(null);
+  const [provider, setProvider] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (e, name) => {
     setformData((prevState) => ({ ...prevState, [name]: e.target.value }));
   };
 
+
+  //* Reset web3 onboarding modal params
+  useEffect(() => {
+    const resetParams = async () => {
+      // const currentStep = await GetParams();
+
+      // setStep(currentStep.step);
+      // setUserNFT();
+    };
+
+    resetParams();
+
+    window?.ethereum?.on('chainChanged', () => getCurrentUserNft());
+    window?.ethereum?.on('accountsChanged', () => getCurrentUserNft());
+  }, []);
+
+  //* Set the wallet address to the state
+  const updateCurrentWalletAddress = async () => {
+    const accounts = await window?.ethereum?.request({ method: 'eth_requestAccounts' });
+
+    if (accounts) setCurrentAccount(accounts[0]);
+  };
+
+  useEffect(() => {
+    updateCurrentWalletAddress();
+
+    window?.ethereum?.on('accountsChanged', updateCurrentWalletAddress);
+  }, []);
+
+  useEffect(() => {
+    const connectPolygon = async () => {
+      console.log(ethereum.chainId);
+
+      // testnet mumbai '0x13881'
+      // polygon mainnet '0x89'
+      if(ethereum.chainId !== '0x89') { // TODO: change for mainnet
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+                {
+                  chainId: '0x89', 
+                  chainName:'Polygon',
+                  rpcUrls:['https://polygon-rpc.com/'],                   
+                  blockExplorerUrls:['https://polygonscan.com/'],  
+                  nativeCurrency: { 
+                    symbol:'MATIC',   
+                    decimals: 18
+                  }     
+                }
+            ]
+          });
+        } 
+        catch (err) {
+          console.log(err);
+        }
+      }
+    };
+    window?.ethereum?.on('chainChanged', () => connectPolygon());
+  }, []);
+  
+  //* Set the smart contract and provider to the state
+  useEffect(() => {
+    const setSmartContractAndProvider = async () => {
+      const web3Modal = new Web3Modal();
+      const connection = await web3Modal.connect();
+      const newProvider = new ethers.providers.Web3Provider(connection);
+      const signer = newProvider.getSigner();
+      const newContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+      setProvider(newProvider);
+      setContract(newContract);
+    };
+
+    setSmartContractAndProvider();
+  }, []);
+
   const getAllTransactions = async () => {
     try {
-      if (ethereum) {
-        const transactionsContract = createEthereumContract();
-
-        const availableTransactions = await transactionsContract.getAllTransactions();
+      if (ethereum) { // TODO: CHANGE ETHEREUM FOR POLYGON EVERYWHERE !!!
+        const availableTransactions = await contract.getAllTransactions();
 
         const structuredTransactions = availableTransactions.map((transaction) => ({
           addressTo: transaction.receiver,
@@ -77,8 +159,7 @@ export const TransactionsProvider = ({ children }) => {
   const checkIfTransactionsExists = async () => {
     try {
       if (ethereum) {
-        const transactionsContract = createEthereumContract();
-        const currentTransactionCount = await transactionsContract.getTransactionCount();
+        const currentTransactionCount = await contract.getTransactionCount();
 
         window.localStorage.setItem("transactionCount", currentTransactionCount);
       }
@@ -109,7 +190,6 @@ export const TransactionsProvider = ({ children }) => {
     try {
       if (ethereum) {
         const { addressTo, amount, keyword, message } = formData;
-        const transactionsContract = createEthereumContract();
         const parsedAmount = ethers.utils.parseEther(amount);
 
         await ethereum.request({
@@ -122,7 +202,7 @@ export const TransactionsProvider = ({ children }) => {
           }],
         });
 
-        const transactionHash = await transactionsContract.addToBlockchain(addressTo, parsedAmount, message, keyword);
+        const transactionHash = await contract.addToBlockchain(addressTo, parsedAmount, message, keyword);
 
         setIsLoading(true);
         console.log(`Loading - ${transactionHash.hash}`);
@@ -130,7 +210,7 @@ export const TransactionsProvider = ({ children }) => {
         console.log(`Success - ${transactionHash.hash}`);
         setIsLoading(false);
 
-        const transactionsCount = await transactionsContract.getTransactionCount();
+        const transactionsCount = await contract.getTransactionCount();
 
         setTransactionCount(transactionsCount.toNumber());
         window.location.reload();
@@ -146,8 +226,7 @@ export const TransactionsProvider = ({ children }) => {
 
   const mintPass = async (_passType, _amount) => {
     try {
-      if(ethereum) {
-        const transactionsContract = createEthereumContract();
+      if(/*ethereum*/ contract) {
 
         // await checkIfWalletIsConnect();
 
@@ -158,7 +237,7 @@ export const TransactionsProvider = ({ children }) => {
         // FIXME: _amount * (1 - discount)
         const parsedAmount = ethers.utils.parseEther(_amount);
 
-        const passId = await transactionsContract
+        const passId = await contract
           .mintPass(parsePassType(_passType), {value: parsedAmount._hex});
         // TODO: ipfs
         
@@ -178,18 +257,19 @@ export const TransactionsProvider = ({ children }) => {
     } 
   };
 
-  const getCurrentUserNft = async (_addr) => {
+  const getCurrentUserNft = async (/*_addr*/) => {
     try {
-      if(ethereum) {
-        const transactionsContract = createEthereumContract();
-        const pass = await transactionsContract.getPlayerPass(_addr);
-        // await pass.wait();
+      if(/*ethereum*/ contract) {
+        const pass = await contract.getPlayerPass(currentAccount);
+        const id = Number(pass[1]);
         console.log(pass[0] + " " + pass[1]);
-        if(pass[1] !== 0) {
-          setUserNFT({passType: pass[0], id: pass[1]});
+        
+        if(id > 0) {
+          setUserNFT({passType: pass[0], id: id});
         }
         else {
           setUserNFT("");
+          // setUserNFT({passType: 0, id: 0});
         }
       } 
     } catch (error) {
@@ -198,6 +278,10 @@ export const TransactionsProvider = ({ children }) => {
       console.log("No ethereum object");
     } 
   };
+
+  useEffect(() => {
+    getCurrentUserNft();
+  }, [contract, currentAccount]);
 
   function parsePassType(_passType) {
     switch(_passType) {
@@ -211,14 +295,29 @@ export const TransactionsProvider = ({ children }) => {
         return 3;
       default:
         throw new Error("Invalid pass type");
-  }
-};
+    }
+  };
 
   // at the start of the app
+  // useEffect(() => {
+  //   checkIfWalletIsConnect();
+  //   // checkIfTransactionsExists();
+  // }, [transactionCount]);
+
+  //* Handle error messages
   useEffect(() => {
-    checkIfWalletIsConnect();
-    // checkIfTransactionsExists();
-  }, [transactionCount]);
+    if (errorMessage) {
+      const parsedErrorMessage = errorMessage?.reason?.slice('execution reverted: '.length).slice(0, -1);
+
+      if (parsedErrorMessage) {
+        setShowAlert({
+          status: true,
+          type: 'failure',
+          message: parsedErrorMessage,
+        });
+      }
+    }
+  }, [errorMessage]);
 
   return (
     <TransactionContext.Provider
@@ -235,6 +334,9 @@ export const TransactionsProvider = ({ children }) => {
         userNFT,
         mintPass,
         getCurrentUserNft,
+        errorMessage,
+        updateCurrentWalletAddress,
+        contract,
       }}
     >
       {children}
