@@ -34,6 +34,8 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   // mapping is usually cheaper than arrays
   mapping(PassType => uint256) public fees;
 
+  mapping (address => uint8[4]) public discounts; // array size = PassType.length
+
   struct Pass {
     PassType passType;  // uint8
     // TODO: country and jersey number
@@ -126,10 +128,13 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function mintPass(PassType _passType) external payable {
-    // TODO: discount?
-    require(msg.value >= fees[_passType], "Not enough ETH sent");
+    require(100 * msg.value >= fees[_passType] * (100 - discounts[msg.sender][uint8(_passType)]), 
+      "Not enough ETH sent");
     
     _mintPass(_passType, msg.sender);
+
+    if(discounts[msg.sender][uint8(_passType)] > 0)
+      delete discounts[msg.sender]; // removeAllDiscounts(msg.sender);
   }
 
   function ownerMint(PassType _passType, address _addr) external onlyOwner returns (uint256) {
@@ -147,7 +152,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function getPass(uint256 _id) public view returns (uint8, uint256) {
-    require(passes[_id].id != 0, "Pass does not exist");
+    require(_id < _tokenIds.current(), "Pass does not exist");
     return (uint8(passes[_id].passType), passes[_id].id);
   }
 
@@ -164,8 +169,25 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     return _tokenIds.current();
   }
 
+  function getAddrDiscounts(address _addr) external view returns (uint8[4] memory) {
+    return discounts[_addr];
+  }
+
 
   // Actions
+
+  function addDiscount(address _addr, PassType _passType, uint8 _discount) external onlyOwner {
+    require(_discount <= 100);
+    discounts[_addr][uint8(_passType)] = _discount;
+  }
+
+  function removeDiscount(address _addr, PassType _passType) public onlyOwner { //don't think I will ever use it
+    discounts[_addr][uint8(_passType)] = 0;
+  }
+
+  function removeAllDiscounts(address _addr) public onlyOwner {
+    delete discounts[_addr];
+  }
 
   /**
     * @dev Burns `tokenId`. See {ERC721-_burn}.
@@ -181,7 +203,6 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
       _burn(tokenId);
 
-      _tokenIds.decrement();  // start at 1
       Pass memory nobodyPass = Pass(PassType.Bronze, 0);
       passes[tokenId] = nobodyPass;
       playerPassId[owner] = 0;

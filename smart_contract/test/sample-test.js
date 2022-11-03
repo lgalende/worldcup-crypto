@@ -23,8 +23,23 @@ describe("PredictorPass", function () {
     });
 
     it("Should init values correctly", async function () {
-      const { predictorPass, owner } = await loadFixture(deployContract);
+      const { predictorPass } = await loadFixture(deployContract);
+      const fee1 = ethers.utils.parseEther("0.01");
+      const fee2 = ethers.utils.parseEther("0.02");
+      const fee3 = ethers.utils.parseEther("0.03");
+      const fee4 = ethers.utils.parseEther("0.05");
+
       expect(await predictorPass.getTokenIds()).to.equal(1);
+
+      const fees = await predictorPass.getFees();
+      expect(Number(fees[0])).to.equal(Number(fee1));
+      expect(Number(fees[1])).to.equal(Number(fee2));
+      expect(Number(fees[2])).to.equal(Number(fee3));
+      expect(Number(fees[3])).to.equal(Number(fee4));
+
+      const pass = await predictorPass.getPass(0);
+      expect(pass[0]).to.equal(0);
+      expect(pass[1]).to.equal(0);
     });
   });
 
@@ -152,7 +167,7 @@ describe("PredictorPass", function () {
       expect(await predictorPass.burn(expectedId)).to.emit(predictorPass, "Transfer").withArgs(owner.address, 0, expectedId);
       expect(await predictorPass.balanceOf(owner.address)).to.equal(0);
 
-      expect(await predictorPass.getTokenIds()).to.equal(1);
+      expect(await predictorPass.getTokenIds()).to.equal(2);  // the _tokenIds counter should remain the same
 
       expect(await predictorPass.mintPass(0, {value: price})).to.emit(predictorPass, "NewPass").withArgs(owner.address, expectedId + 1, type);;
     });
@@ -225,49 +240,115 @@ describe("PredictorPass", function () {
   });
 
   describe("Getters", function () {
-    // test getters
     it("Should get the token id", async function () {
       const { predictorPass, owner } = await loadFixture(deployContract);
       const type = 0;
       const expectedId = 1;
       const price = ethers.utils.parseEther("0.01");
 
-      expect(await predictorPass.mintPass(type, {value: price})).to.emit(predictorPass, "NewPass").withArgs(owner.address, expectedId, type);;
-
-      expect(await predictorPass.playerPassId(owner.address)).to.equal(expectedId);
+      await predictorPass.mintPass(type, {value: price});
+      expect(await predictorPass.getPlayerPassId(owner.address)).to.equal(expectedId);
     });
 
     it("Should get the token type", async function () {
-      const { predictorPass, owner } = await loadFixture(deployContract);
+      const { predictorPass } = await loadFixture(deployContract);
       const type = 0;
       const expectedId = 1;
       const price = ethers.utils.parseEther("0.01");
 
-      expect(await predictorPass.mintPass(type, {value: price})).to.emit(predictorPass, "NewPass").withArgs(owner.address, expectedId, type);;
-
-      expect(await predictorPass.getPass(expectedId).type).to.equal(type);
+      await predictorPass.mintPass(type, {value: price});
+      expect((await predictorPass.getPass(expectedId))[0]).to.equal(type);
     });
 
     // bad cases
     it("Should not get a non existent token", async function () {
-      const { predictorPass, owner } = await loadFixture(deployContract);
+      const { predictorPass } = await loadFixture(deployContract);
       const expectedId = 1;
 
-      await expect(predictorPass.getPass(expectedId)).to.be.revertedWith("ERC721: owner query for nonexistent token");
+      await expect(predictorPass.getPass(expectedId)).to.be.revertedWith("Pass does not exist");
     });
 
     it("Should not get the token id of a non existent address", async function () {
       const { predictorPass, owner } = await loadFixture(deployContract);
-      const expectedId = 1;
+      const type = 0;
+      const price = ethers.utils.parseEther("0.01");
 
-      await expect(predictorPass.playerPassId(owner.address)).to.be.revertedWith("ERC721: owner query for nonexistent token");
+      expect(await predictorPass.getPlayerPassId(owner.address)).to.equal(0);
+    });   
+  });
+
+  describe("Discounts", function () {
+    it("Should let the address pay less than the fee", async function () {
+      const { predictorPass, owner } = await loadFixture(deployContract);
+      const type = 0;
+      const discountPrice = ethers.utils.parseEther("0.001");
+      const disc = 90;
+
+      await predictorPass.addDiscount(owner.address, type, disc);
+
+      expect((await predictorPass.getAddrDiscounts(owner.address))[type]).to.equal(disc);
+      
+      await predictorPass.mintPass(type, {value: discountPrice});
+
+      expect((await predictorPass.getAddrDiscounts(owner.address))[type]).to.equal(0);
+
     });
 
-    it("Should not get the token type of a non existent address", async function () {
+    it("Should not let the address mint again with a discount", async function () {
       const { predictorPass, owner } = await loadFixture(deployContract);
+      const type = 0;
       const expectedId = 1;
+      const discountPrice = ethers.utils.parseEther("0.001");
+      const disc = 90;
 
-      await expect(predictorPass.getPassType(expectedId)).to.be.revertedWith("ERC721: owner query for nonexistent token");
-    });      
+      await predictorPass.addDiscount(owner.address, type, disc);
+      
+      await predictorPass.mintPass(type, {value: discountPrice});
+      await predictorPass.burn(expectedId);
+      await expect(predictorPass.mintPass(type, {value: discountPrice})).to.be.revertedWith("Not enough ETH sent");
+    });
+
+    it("Should not let someone else add a discount", async function () {
+      const { predictorPass, owner, addr1 } = await loadFixture(deployContract);
+      const type = 0;
+      const disc = 90;
+
+      await expect(predictorPass.connect(addr1).addDiscount(owner.address, type, disc)).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Should delete address discounts", async function () {
+      const { predictorPass, owner } = await loadFixture(deployContract);
+
+      await predictorPass.addDiscount(owner.address, 0, 7);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[0]).to.equal(7);
+      await predictorPass.removeDiscount(owner.address, 0);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[0]).to.equal(0);
+
+      await predictorPass.addDiscount(owner.address, 1, 9);
+      await predictorPass.addDiscount(owner.address, 2, 60);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[1]).to.equal(9);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[2]).to.equal(60);
+      
+      expect((await predictorPass.getAddrDiscounts(owner.address))[0]).to.equal(0);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[3]).to.equal(0);
+
+      await predictorPass.removeAllDiscounts(owner.address);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[0]).to.equal(0);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[1]).to.equal(0);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[2]).to.equal(0);
+      expect((await predictorPass.getAddrDiscounts(owner.address))[3]).to.equal(0);
+    });
+
+    it("Should not add discount to someone else", async function () {
+      const { predictorPass, owner, addr1 } = await loadFixture(deployContract);
+      const type = 0;
+      const expectedId = 1;
+      const discountPrice = ethers.utils.parseEther("0.001");
+      const disc = 90;
+      
+      await predictorPass.addDiscount(owner.address, type, disc);
+      await expect(predictorPass.connect(addr1).mintPass(type, {value: discountPrice})).to.be.revertedWith("Not enough ETH sent");
+    });
   });
+
 });
