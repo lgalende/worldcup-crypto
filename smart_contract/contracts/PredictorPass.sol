@@ -9,32 +9,16 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract PredictorPass is ERC721URIStorage, Ownable {
   using Counters for Counters.Counter;
+
   Counters.Counter private _tokenIds;
-
-  constructor(string memory _baseURI)
-    ERC721("Predictor Pass", "PP")
-  {
-    baseURI = _baseURI;
-
-    _tokenIds.increment();  // start at 1
-
-    passes.push(Pass(PassType.Bronze, 0));  // belongs to nobody
-    
-    // initialize mapping fees
-    fees[PassType.Bronze] = 0.01 ether;
-    fees[PassType.Silver] = 0.02 ether;
-    fees[PassType.Gold] = 0.03 ether;
-    fees[PassType.Diamond] = 0.05 ether;
-  }
+  string public baseURI;
+  IERC20 usdcInstance;
+  uint8 usdcDecimals;
 
   enum PassType { Bronze, Silver, Gold, Diamond }
 
-  string public baseURI;
-
   // mapping is usually cheaper than arrays
   mapping(PassType => uint256) public fees;
-
-  mapping (address => uint8[4]) public discounts; // array size = PassType.length
 
   struct Pass {
     PassType passType;  // uint8
@@ -42,15 +26,37 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     uint256 id;
   }
   // TODO: timestamp?
+  
+  Pass[] public passes; // 0 is reserved
+  
+
+  constructor(string memory _baseURI, IERC20 _usdcInstance)
+    ERC721("Predictor Pass", "PP")
+  {
+    baseURI = _baseURI;
+    usdcInstance = _usdcInstance;
+    usdcDecimals = usdcInstance.decimals(); // 6 decimals
+
+    _tokenIds.increment();  // start at 1
+
+    passes.push(Pass(PassType.Bronze, 0));  // belongs to nobody
+    
+    // initialize mapping fees
+    fees[PassType.Bronze]   = 1 * (10 ** decimals); // 1 USDC
+    fees[PassType.Silver]   = 2 * (10 ** decimals); // 2 USDC
+    fees[PassType.Gold]     = 4 * (10 ** decimals); // 4 USDC
+    fees[PassType.Diamond]  = 6 * (10 ** decimals); // 6 USDC
+  }
+
+  
 
   // The logic of the application requires knowing the type of pass.
   // The id of the NFT which each user holds.
   mapping(address => uint256) public playerPassId;
 
-  Pass[] public passes; // 0 is reserved
-
   event NewPass(address indexed owner, uint256 id, PassType passType);
   // and event Transfer from _burn and transfer overriden functions
+
 
   // Helpers
   function _createRandomNum(uint256 _mod) internal view returns (uint256) {
@@ -61,7 +67,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function updateFee(PassType _passType, uint256 _fee) external onlyOwner {
-    fees[_passType] = _fee;
+    fees[_passType] = _fee * (10 ** decimals);
   }
 
   function withdraw() external payable onlyOwner {
@@ -128,13 +134,12 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function mintPass(PassType _passType) external payable {
-    require(100 * msg.value >= fees[_passType] * (100 - discounts[msg.sender][uint8(_passType)]), 
-      "Not enough ETH sent");
+
+    // frontend must call usdc.approve() so the user accepts the contract to transfer on their behalf
+    bool success = usdcInstance.transferFrom(msg.sender, address(this), fees[_passType]);
+    require(success, "buy failed");
     
     _mintPass(_passType, msg.sender);
-
-    if(discounts[msg.sender][uint8(_passType)] > 0)
-      delete discounts[msg.sender]; // removeAllDiscounts(msg.sender);
   }
 
   function ownerMint(PassType _passType, address _addr) external onlyOwner returns (uint256) {
@@ -169,25 +174,8 @@ contract PredictorPass is ERC721URIStorage, Ownable {
     return _tokenIds.current();
   }
 
-  function getAddrDiscounts(address _addr) external view returns (uint8[4] memory) {
-    return discounts[_addr];
-  }
-
 
   // Actions
-
-  function addDiscount(address _addr, PassType _passType, uint8 _discount) external onlyOwner {
-    require(_discount <= 100);
-    discounts[_addr][uint8(_passType)] = _discount;
-  }
-
-  function removeDiscount(address _addr, PassType _passType) public onlyOwner { //don't think I will ever use it
-    discounts[_addr][uint8(_passType)] = 0;
-  }
-
-  function removeAllDiscounts(address _addr) public onlyOwner {
-    delete discounts[_addr];
-  }
 
   /**
     * @dev Burns `tokenId`. See {ERC721-_burn}.
