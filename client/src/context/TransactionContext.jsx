@@ -70,7 +70,7 @@ export const TransactionsProvider = ({ children }) => {
       console.log(ethereum.chainId);
       // testnet mumbai '0x13881'
       // polygon mainnet '0x89'
-      if(ethereum.chainId !== '0x89') { // TODO: change for mainnet
+      if(ethereum.chainId !== '0x89') { // fixme: change for mainnet
         try {
           await window?.ethereum?.request({
             method: 'wallet_addEthereumChain',
@@ -93,6 +93,8 @@ export const TransactionsProvider = ({ children }) => {
         }
       }
     };
+
+    connectPolygon();
     window?.ethereum?.on('chainChanged', () => connectPolygon());
   }, []);
   
@@ -104,10 +106,9 @@ export const TransactionsProvider = ({ children }) => {
       const newProvider = new ethers.providers.Web3Provider(connection);
       const signer = newProvider.getSigner();
       const newContract = new ethers.Contract(contractAddress, contractABI, signer);
-      const usdcContract = new ethers.Contract(derc20Address, erc20ABI, signer);  // fixme: usdc address
+      const usdcContract = new ethers.Contract(usdcAddress, erc20ABI, signer);  // fixme: usdc address
 
       setProvider(newProvider);
-      console.log(contract);
       setContract(newContract);
       setUsdcContract(usdcContract);
     };
@@ -234,26 +235,36 @@ export const TransactionsProvider = ({ children }) => {
       if(/*ethereum*/ contract) {
         // await checkIfWalletIsConnect();
 
-        const usdcDecimals = 10 ** 17;  // fixme 6 for usdc
+        const usdcDecimals = 10 ** 6;  // fixme 6 for usdc
         const parsedAmount = BigInt(_amount * usdcDecimals); // usdc has 6 decimals
         const approve = await usdcContract.approve(contractAddress, parsedAmount);
-        approve.wait();
-
-        const passId = await contract.mintPass(parsePassType(_passType));
         
         setIsLoading(true);
-        await passId.wait();
-        console.log("NFT created with id: " + passId);
+        
+        await approve.wait();
+
+        const pass = await contract.mintPass(parsePassType(_passType));
+
+        await pass.wait();
+        
+        // const id = Number(pass[1]);
+
+        console.log("NFT created");
+        
+        // setUserNFT({passType: pass[0], id: id});
+        
         setIsLoading(false);
 
-        getCurrentUserNft(currentAccount);
+        alert("Wait a few seconds and refresh the page to see your PASS");
 
-        window.location.reload();
+        // window.location.reload();
       } 
       else {
+        alert("Please wait a few seconds and refresh the page");
         console.log("No contract object");
       }
     } catch (error) {
+      setIsLoading(false);
       console.log(error);
       console.log(currentAccount);
       throw new Error("Minting failed");
@@ -262,10 +273,9 @@ export const TransactionsProvider = ({ children }) => {
 
   const getCurrentUserNft = async (/*_addr*/) => {
     try {
-      console.log(1);
       if(/*ethereum*/ contract) {
-        console.log(2);
         const pass = await contract.getPlayerPass(currentAccount);
+        // await pass.wait();
         const id = Number(pass[1]);
         console.log(pass[0] + " " + pass[1]);
         
@@ -273,14 +283,14 @@ export const TransactionsProvider = ({ children }) => {
           setUserNFT({passType: pass[0], id: id});
         }
         else {
-          setUserNFT("");
+          // setUserNFT("");
           // setUserNFT({passType: 0, id: 0});
         }
       }
     } catch (error) {
       console.log(error);
       setUserNFT("");
-      console.log("No ethereum object");
+      console.log("No contract or no pass");
     } 
   };
 

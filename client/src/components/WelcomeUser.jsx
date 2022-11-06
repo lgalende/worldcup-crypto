@@ -34,7 +34,7 @@ const WelcomeUser = () => {
             Let's make some predictions!
           </h1> */}
           <h1 className="text-3xl sm:text-5xl text-white text-gradient py-1">
-            A few days before the<br/>cup begins you will<br/>be able to start making predictions!
+            A few days before the cup begins you will be able to start making predictions!
           </h1>
           <p className="text-left mt-5 text-white font-light md:w-9/12 w-11/12 text-base text-l sm:text-xl">
             <i> Make Qatar 2022 matches even more exciting with World Cup Crypto. </i>
@@ -64,7 +64,7 @@ const WelcomeUser = () => {
             </div>
           </div>
           <div className="flex flex-row justify-end w-80">
-          <div className="p-1 sm:w-16 w-full flex flex-col justify-start items-center red-glassmorphism">
+          <div className="p-1 sm:w-16 w-full flex flex-col justify-start items-center hidden red-glassmorphism">
             {/* <div className="h-[1px] w-full bg-gray-400 my-2" /> */}
             BURN
           </div>

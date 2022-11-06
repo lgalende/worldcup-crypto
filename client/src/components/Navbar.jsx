@@ -18,7 +18,7 @@ const Navbar = () => {
 
   return (
     <nav className="w-full flex md:justify-center justify-between items-center p-4">
-      <div className="md:flex-[0.5] flex-initial justify-center items-center">
+      <div className="md:flex-[0.7] flex-initial justify-center items-center">
         <img src={logo} alt="logo" className="w-36 cursor-pointer" />
       </div>
       <ul className="text-white md:flex hidden list-none flex-row justify-between items-center flex-initial">
@@ -31,7 +31,7 @@ const Navbar = () => {
               type="button"
               onClick={(e) => {
                 e.preventDefault();
-                window.open('http://google.com', '_blank', 'noopener,noreferrer');
+                window.open('https://worldcups-organization.gitbook.io/world-cup-crypto/v/english/', '_blank', 'noopener,noreferrer');
                 }}
               className="flex flex-row justify-center items-center my-5 blue-glassmorphism p-2  cursor-pointer hover:bg-[#672446]"
             >
@@ -78,7 +78,7 @@ const Navbar = () => {
               type="button"
               onClick={(e) => {
                 e.preventDefault();
-                window.open('https://worldcups-organization.gitbook.io/world-cup-crypto/v/english/polygon-handbook', '_blank', 'noopener,noreferrer');
+                window.open('https://worldcups-organization.gitbook.io/world-cup-crypto/v/english/', '_blank', 'noopener,noreferrer');
                 }}
               className="flex flex-row justify-center items-center my-5 blue-glassmorphism p-2  cursor-pointer hover:bg-[#672446]"
             >

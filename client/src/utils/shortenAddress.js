@@ -24,7 +24,7 @@ export function passColor (pass) {
         case 2:
             return "gold2";
         case 3:
-            return "diamond2";
+            return "emerald2";
         default:
             throw new Error("Invalid pass");
     }

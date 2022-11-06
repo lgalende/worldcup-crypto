@@ -4,7 +4,7 @@ const main = async () => {
   const derc20 = "0xfe4F5145f6e09952a5ba9e956ED0C25e3Fa4c7F1";
 
   const predictorPassFactory = await hre.ethers.getContractFactory("PredictorPass");
-  const predictorPassContract = await predictorPassFactory.deploy(metadata, usdcInstance, 6);  // fixme usdcInstance
+  const predictorPassContract = await predictorPassFactory.deploy(metadata, usdcInstance, 6);  // fixme usdcInstance, 6
 
   await predictorPassContract.deployed();
 
