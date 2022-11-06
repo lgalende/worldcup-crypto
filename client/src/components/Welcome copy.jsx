@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { AiFillPlayCircle } from "react-icons/ai";
-import { SiEthereum } from "react-icons/si";
+import { FaTrophy } from "react-icons/fa";
 import { BsInfoCircle } from "react-icons/bs";
 
 import { TransactionContext } from "../context/TransactionContext";
@@ -21,7 +21,7 @@ const Input = ({ placeholder, name, type, value, handleChange }) => (
 );
 
 const Welcome = () => {
-  const { currentAccount, connectWallet, handleChange, sendTransaction, formData, isLoading } = useContext(TransactionContext);
+  const { currentAccount, connectWallet, handleChange, sendTransaction, formData, isLoading, updateCurrentWalletAddress } = useContext(TransactionContext);
 
   const handleSubmit = (e) => {
     const { addressTo, amount, keyword, message } = formData;
@@ -46,7 +46,7 @@ const Welcome = () => {
           {!currentAccount && (
             <button
               type="button"
-              onClick={connectWallet}
+              onClick={updateCurrentWalletAddress}
               className="flex flex-row justify-center items-center my-5 bg-[#2952e3] p-3 rounded-full cursor-pointer hover:bg-[#2546bd]"
             >
               <AiFillPlayCircle className="text-white mr-2" />
@@ -79,7 +79,7 @@ const Welcome = () => {
             <div className="flex justify-between flex-col w-full h-full">
               <div className="flex justify-between items-start">
                 <div className="w-10 h-10 rounded-full border-2 border-white flex justify-center items-center">
-                  <SiEthereum fontSize={21} color="#fff" />
+                  <FaTrophy fontSize={21} color="#fff" />
                 </div>
                 <BsInfoCircle fontSize={17} color="#fff" />
               </div>

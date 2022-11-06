@@ -1,18 +1,27 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
+const ERC20ABI = require('./erc20.json');
 
 describe("PredictorPass", function () {    
   async function deployContract() { 
     const metadata = "ipfs://QmWuJoLZntYPsNvbbL8doN3W3wjupfjfKBABozP5GbgJ4k";
+    const usdcAddress = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+    const derc20 = "0xfe4F5145f6e09952a5ba9e956ED0C25e3Fa4c7F1";
 
-    const PredictorPass = await ethers.getContractFactory("PredictorPass");
     const [owner, addr1, addr2] = await ethers.getSigners();
 
-    const predictorPass = await PredictorPass.deploy(metadata);
+    const provider = ethers.provider;
+    const USDC = new ethers.Contract(derc20, ERC20ABI.abi, owner);
+    // const usdc = await USDC.deploy();
+    // await usdc.deployed();
+
+    const PredictorPass = await ethers.getContractFactory("PredictorPass");
+
+    const predictorPass = await PredictorPass.deploy(metadata, derc20, 18);
     await predictorPass.deployed();
 
-    return {predictorPass, owner, addr1, addr2};
+    return {predictorPass, USDC, owner, addr1, addr2};
   }
 
   describe("Deployment", function () {
@@ -24,10 +33,14 @@ describe("PredictorPass", function () {
 
     it("Should init values correctly", async function () {
       const { predictorPass } = await loadFixture(deployContract);
-      const fee1 = ethers.utils.parseEther("0.01");
-      const fee2 = ethers.utils.parseEther("0.02");
-      const fee3 = ethers.utils.parseEther("0.03");
-      const fee4 = ethers.utils.parseEther("0.05");
+      // const fee1 = ethers.utils.parseEther("1");
+      // const fee2 = ethers.utils.parseEther("2");
+      // const fee3 = ethers.utils.parseEther("3");
+      // const fee4 = ethers.utils.parseEther("5");
+      const fee1 = 1 * 10**6;
+      const fee2 = 2 * 10**6;
+      const fee3 = 3 * 10**6;
+      const fee4 = 5 * 10**6;
 
       expect(await predictorPass.getTokenIds()).to.equal(1);
 
@@ -46,13 +59,14 @@ describe("PredictorPass", function () {
 
   describe("Minting", function () {
 
-    it("Should return 1, the new token id", async function () {
-      const { predictorPass, owner } = await loadFixture(deployContract);
+    it("Should create a mew token with id 1", async function () {
+      const { predictorPass, USDC, owner } = await loadFixture(deployContract);
       const type = 0;
       const expectedId = 1;
-      const price = ethers.utils.parseEther("0.01");
+      const price = 1 * 10**6;
 
-      expect(await predictorPass.mintPass(type, {value: price})).to.emit(predictorPass, "NewPass").withArgs(owner.address, expectedId, type);;
+      await USDC.approve(predictorPass.address, price);
+      expect(await predictorPass.mintPass(type)).to.emit(predictorPass, "NewPass").withArgs(owner.address, expectedId, type);;
 
       const mintedPass = await predictorPass.passes(1);
 
@@ -61,7 +75,7 @@ describe("PredictorPass", function () {
 
       expect(await predictorPass.getTokenIds()).to.equal(2);
 
-      // expect(await ethers.balanceOf(this)).to.equal(price);
+      expect(await ethers.balanceOf(owner)).to.equal(price);
     });
 
     it("Should mint 3 tokens", async function () {

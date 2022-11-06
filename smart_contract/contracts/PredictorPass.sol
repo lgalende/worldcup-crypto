@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract PredictorPass is ERC721URIStorage, Ownable {
   using Counters for Counters.Counter;
@@ -30,25 +31,25 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   Pass[] public passes; // 0 is reserved
   
 
-  constructor(string memory _baseURI, IERC20 _usdcInstance)
+  constructor(string memory _baseURI, IERC20 _usdcInstance, uint8 _decimals)
     ERC721("Predictor Pass", "PP")
   {
     baseURI = _baseURI;
     usdcInstance = _usdcInstance;
-    usdcDecimals = usdcInstance.decimals(); // 6 decimals
+    usdcDecimals = _decimals;  // fixme 6
 
     _tokenIds.increment();  // start at 1
 
     passes.push(Pass(PassType.Bronze, 0));  // belongs to nobody
     
     // initialize mapping fees
-    fees[PassType.Bronze]   = 1 * (10 ** decimals); // 1 USDC
-    fees[PassType.Silver]   = 2 * (10 ** decimals); // 2 USDC
-    fees[PassType.Gold]     = 4 * (10 ** decimals); // 4 USDC
-    fees[PassType.Diamond]  = 6 * (10 ** decimals); // 6 USDC
+    fees[PassType.Bronze]   = 1 * (10 ** usdcDecimals); // 1 USDC
+    fees[PassType.Silver]   = 2 * (10 ** usdcDecimals); // 2 USDC
+    fees[PassType.Gold]     = 3 * (10 ** usdcDecimals); // 3 USDC
+    fees[PassType.Diamond]  = 5 * (10 ** usdcDecimals); // 5 USDC
   }
 
-  
+
 
   // The logic of the application requires knowing the type of pass.
   // The id of the NFT which each user holds.
@@ -67,7 +68,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function updateFee(PassType _passType, uint256 _fee) external onlyOwner {
-    fees[_passType] = _fee * (10 ** decimals);
+    fees[_passType] = _fee * (10 ** usdcDecimals);
   }
 
   function withdraw() external payable onlyOwner {
@@ -109,7 +110,7 @@ contract PredictorPass is ERC721URIStorage, Ownable {
 
   // Creation
   function _mintPass(PassType _passType, address _addr) internal returns (uint256) {    
-    require(playerPassId[_addr] == 0, "Player already has a pass");
+    // require(playerPassId[_addr] == 0, "Player already has a pass"); // done in caller functions
     
     // require(_addr != address(0), "ERC721: mint to the zero address"); // already donde by _mint
 
@@ -134,15 +135,18 @@ contract PredictorPass is ERC721URIStorage, Ownable {
   }
 
   function mintPass(PassType _passType) external payable {
+    // not in _mintPass because this check has to be done before transfering the tokens
+    require(playerPassId[msg.sender] == 0, "Player already has a pass");
 
     // frontend must call usdc.approve() so the user accepts the contract to transfer on their behalf
-    bool success = usdcInstance.transferFrom(msg.sender, address(this), fees[_passType]);
+    bool success = usdcInstance.transferFrom(msg.sender, owner(), fees[_passType]);
     require(success, "buy failed");
     
     _mintPass(_passType, msg.sender);
   }
 
   function ownerMint(PassType _passType, address _addr) external onlyOwner returns (uint256) {
+    require(playerPassId[_addr] == 0, "Player already has a pass");
     return _mintPass(_passType, _addr);
   }
 

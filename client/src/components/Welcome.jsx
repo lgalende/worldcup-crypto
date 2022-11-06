@@ -1,7 +1,5 @@
 import React, { useContext } from "react";
 import { AiFillPlayCircle } from "react-icons/ai";
-import { SiEthereum } from "react-icons/si";
-import { BsInfoCircle } from "react-icons/bs";
 
 import { TransactionContext } from "../context/TransactionContext";
 import { shortenAddress } from "../utils/shortenAddress";
@@ -27,15 +25,15 @@ const Welcome = () => {
       <div className="flex flex-col md:p-12 py-12 px-4">
         <div className="flex flex-1 justify-start items-start flex-col mf:mr-10">
           <h1 className="text-3xl sm:text-5xl text-white text-gradient py-1">
-            Get your pass <br /> and start making predictions!
+            Get your pass and in a few<br /> days start making predictions!
           </h1>
-          <p className="text-left mt-5 text-white font-light md:w-9/12 w-11/12 text-base">
+          <p className="text-left mt-5 text-white font-light md:w-9/12 w-11/12 text-base text-l sm:text-xl">
             <i> Make Qatar 2022 matches even more exciting with World Cup Crypto. </i>
           </p>
           {/* {!currentAccount && (
             <button
               type="button"
-              onClick={connectWallet}
+              onClick={updateCurrentWalletAddress}
               className="flex flex-row justify-center items-center my-5 bg-[#2952e3] p-3 rounded-full cursor-pointer hover:bg-[#2546bd]"
             >
               <AiFillPlayCircle className="text-white mr-2" />
@@ -48,10 +46,10 @@ const Welcome = () => {
           <div className="flex flex-wrap justify-center items-center mt-10">
               <Passes />
           </div>
-          <div className="flex flex-wrap justify-start items-start mt-10">
+          {/* <div className="flex flex-wrap justify-start items-start mt-10">
             <h1 className="mt-2 mb-3 text-white text-4xl py-3">Rounds</h1>
-            <Tabs/>
-          </div>
+            <Tabs/> or Accordion 
+          </div> */}
         </div>
 
 

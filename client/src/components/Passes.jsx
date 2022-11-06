@@ -2,8 +2,11 @@ import React, { useContext } from "react";
 
 import { TransactionContext } from "../context/TransactionContext";
 
-import { SiEthereum } from "react-icons/si";
+import { FaTrophy } from "react-icons/fa";
 import { BsInfoCircle } from "react-icons/bs";
+import { IoMdFootball } from "react-icons/io";
+import { SiFifa } from "react-icons/si";
+import {GiSoccerKick} from "react-icons/gi";
 
 import useFetch from "../hooks/useFetch";
 import passData from "../utils/passData";
@@ -11,7 +14,7 @@ import { shortenAddress } from "../utils/shortenAddress";
 import { Loader } from ".";
 
 const PassCard = ({ type, price, description, color }) => {
-  const { currentAccount, isLoading, connectWallet, mintPass } = useContext(TransactionContext);
+  const { currentAccount, isLoading, connectWallet, mintPass, updateCurrentWalletAddress } = useContext(TransactionContext);
 
   const handleSubmit = (e) => {
     // e.preventDefault(); // Prevents page refresh
@@ -36,11 +39,11 @@ const PassCard = ({ type, price, description, color }) => {
       <div className="p-5 m-1 w-24/100 flex flex-col justify-start items-center blue-glassmorphism">
             <div className={`p-3 flex justify-end items-start flex-col rounded-xl h-40 w-72 my-5 .white-glassmorphism ${color}`}>
               <div className="flex justify-between flex-col w-full h-full">
-                <div className="flex justify-between items-start">
-                  <div className="w-10 h-10 rounded-full border-2 border-white flex justify-center items-center">
-                    <SiEthereum fontSize={21} color="#fff" />
-                  </div>
-                  <BsInfoCircle fontSize={17} color="#fff" />
+                <div className="flex justify-between items-start mr-1">
+                  {/* <div className="w-12 h-12 rounded-full border-2 border-white flex justify-center items-center"> */}
+                    <GiSoccerKick fontSize={40} color="#fff" className="mt-1"/>
+                  {/* </div> */}
+                  <SiFifa fontSize={40} color="#fff" />
                 </div>
                 <div>
                   <p className="text-white font-light text-sm">
@@ -57,7 +60,7 @@ const PassCard = ({ type, price, description, color }) => {
               !currentAccount ? 
               <button
               type="button"
-              onClick={connectWallet}
+              onClick={updateCurrentWalletAddress}
               className="flex flex-row justify-center items-center my-5 bg-[#2952e3] p-3 rounded-full cursor-pointer hover:bg-[#2546bd]"
             >
               {/* <AiFillPlayCircle className="text-white mr-2" /> */}
@@ -74,7 +77,7 @@ const PassCard = ({ type, price, description, color }) => {
                   onClick={handleSubmit}
                   className="text-white w-full mt-2 border-[1px] p-2 border-[#3d4f7c] hover:bg-[#3d4f7c] rounded-full cursor-pointer"
                   >
-                    Buy {price} ETH
+                    <b>Buy {price} USDC</b>
                   </button>
                 )
               )
@@ -101,25 +104,25 @@ const Passes = () => {
         <div className="flex flex-wrap justify-center items-center mt-10">
           <PassCard
           type="Bronze"
-          price="0.01"
+          price="1"
           description="One round"
           color="bronze2"
           />
           <PassCard
           type="Silver"
-          price="0.02"
+          price="2"
           description="One round, unlimited"
           color="silver2"
           />
           <PassCard
           type="Gold"
-          price="0.03"
+          price="3"
           description="All rounds"
           color="gold2"
           />
           <PassCard
           type="Diamond"
-          price="0.05"
+          price="5"
           description="All rounds, unlimited"
           color="emerald2"
           />

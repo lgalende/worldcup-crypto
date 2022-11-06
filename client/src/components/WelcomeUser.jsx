@@ -1,7 +1,10 @@
 import React, { useContext } from "react";
 import { AiFillPlayCircle } from "react-icons/ai";
-import { SiEthereum } from "react-icons/si";
+import { FaTrophy } from "react-icons/fa";
 import { BsInfoCircle } from "react-icons/bs";
+import { IoMdFootball } from "react-icons/io";
+import { SiFifa } from "react-icons/si";
+import {GiSoccerKick} from "react-icons/gi";
 
 import { TransactionContext } from "../context/TransactionContext";
 import { shortenAddress, parsePass, passColor } from "../utils/shortenAddress";
@@ -26,11 +29,14 @@ const WelcomeUser = () => {
   return (
     <div className="flex w-full justify-center items-center">
       <div className="flex mf:flex-row flex-col items-start justify-between md:p-20 py-12 px-4">
-        <div className="flex flex-1 justify-start items-start flex-col mf:mr-10">
-          <h1 className="text-3xl sm:text-5xl text-white text-gradient py-1">
+        <div className="flex flex-1 justify-start items-start flex-col mf:mr-20">
+          {/* <h1 className="text-3xl sm:text-5xl text-white text-gradient py-1">
             Let's make some predictions!
+          </h1> */}
+          <h1 className="text-3xl sm:text-5xl text-white text-gradient py-1">
+            A few days before the<br/>cup begins you will<br/>be able to start making predictions!
           </h1>
-          <p className="text-left mt-5 text-white font-light md:w-9/12 w-11/12 text-base">
+          <p className="text-left mt-5 text-white font-light md:w-9/12 w-11/12 text-base text-l sm:text-xl">
             <i> Make Qatar 2022 matches even more exciting with World Cup Crypto. </i>
           </p>
         </div>
@@ -39,16 +45,16 @@ const WelcomeUser = () => {
           <h1 className="text-3xl sm:text-5xl text-white py-1">
             My Pass
           </h1>
-          <div className={`p-3 flex justify-end items-start flex-col rounded-xl h-40 sm:w-72 w-full my-5 .white-glassmorphism ${passColor(userNFT.passType)}`}>
+          <div className={`p-3 flex justify-end items-start flex-col rounded-xl h-48 sm:w-80 w-full my-5 mb-1 .white-glassmorphism ${passColor(userNFT.passType)}`}>
             <div className="flex justify-between flex-col w-full h-full">
-              <div className="flex justify-between items-start">
-                <div className="w-10 h-10 rounded-full border-2 border-white flex justify-center items-center">
-                  <SiEthereum fontSize={21} color="#fff" />
+            <div className="flex justify-between items-start mr-1 mt-2">
+                  {/* <div className="w-12 h-12 rounded-full border-2 border-white flex justify-center items-center"> */}
+                    <GiSoccerKick fontSize={46} color="#fff" className="mt-1"/>
+                  {/* </div> */}
+                  <SiFifa fontSize={44} color="#fff" />
                 </div>
-                <BsInfoCircle fontSize={17} color="#fff" />
-              </div>
               <div>
-                <p className="text-white font-light text-sm">
+                <p className="text-white font-light text-md">
                   {shortenAddress(currentAccount)}
                 </p>
                 <p className="text-white font-semibold text-lg mt-1">
@@ -57,9 +63,11 @@ const WelcomeUser = () => {
               </div>
             </div>
           </div>
-          <div className="p-5 sm:w-96 w-full flex flex-col justify-start items-center blue-glassmorphism">
-
-            <div className="h-[1px] w-full bg-gray-400 my-2" />
+          <div className="flex flex-row justify-end w-80">
+          <div className="p-1 sm:w-16 w-full flex flex-col justify-start items-center red-glassmorphism">
+            {/* <div className="h-[1px] w-full bg-gray-400 my-2" /> */}
+            BURN
+          </div>
           </div>
         </div>
       </div>

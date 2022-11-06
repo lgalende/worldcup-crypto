@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import Web3Modal from 'web3modal';
 // import Portis from "@portis/web3";
 
-import { contractABI, contractAddress } from "../utils/constants";
+import { contractABI, contractAddress, usdcAddress, erc20ABI, derc20Address } from "../utils/constants";
 
 export const TransactionContext = React.createContext();
 
@@ -29,6 +29,7 @@ export const TransactionsProvider = ({ children }) => {
   const [contract, setContract] = useState(null);
   const [provider, setProvider] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [usdcContract, setUsdcContract] = useState(null);
 
   const handleChange = (e, name) => {
     setformData((prevState) => ({ ...prevState, [name]: e.target.value }));
@@ -52,6 +53,7 @@ export const TransactionsProvider = ({ children }) => {
 
   //* Set the wallet address to the state
   const updateCurrentWalletAddress = async () => {
+    if (!ethereum) return alert("Please install metamask.");
     const accounts = await window?.ethereum?.request({ method: 'eth_requestAccounts' });
 
     if (accounts) setCurrentAccount(accounts[0]);
@@ -61,17 +63,16 @@ export const TransactionsProvider = ({ children }) => {
     updateCurrentWalletAddress();
 
     window?.ethereum?.on('accountsChanged', updateCurrentWalletAddress);
-  }, []);
+  }, );
 
   useEffect(() => {
     const connectPolygon = async () => {
       console.log(ethereum.chainId);
-
       // testnet mumbai '0x13881'
       // polygon mainnet '0x89'
       if(ethereum.chainId !== '0x89') { // TODO: change for mainnet
         try {
-          await window.ethereum.request({
+          await window?.ethereum?.request({
             method: 'wallet_addEthereumChain',
             params: [
                 {
@@ -103,9 +104,12 @@ export const TransactionsProvider = ({ children }) => {
       const newProvider = new ethers.providers.Web3Provider(connection);
       const signer = newProvider.getSigner();
       const newContract = new ethers.Contract(contractAddress, contractABI, signer);
+      const usdcContract = new ethers.Contract(derc20Address, erc20ABI, signer);  // fixme: usdc address
 
       setProvider(newProvider);
+      console.log(contract);
       setContract(newContract);
+      setUsdcContract(usdcContract);
     };
 
     setSmartContractAndProvider();
@@ -170,6 +174,7 @@ export const TransactionsProvider = ({ children }) => {
     }
   };
 
+  // same as updateCurrentWalletAddress
   const connectWallet = async () => {
     try {
       if (!ethereum) return alert("Please install MetaMask.");
@@ -227,19 +232,14 @@ export const TransactionsProvider = ({ children }) => {
   const mintPass = async (_passType, _amount) => {
     try {
       if(/*ethereum*/ contract) {
-
         // await checkIfWalletIsConnect();
 
-        // FIXME: is discount necessary here? Or amount should have it already applied?
-        // const discount = await transactionsContract.getDiscount(currentAccount);
-        // await discount.wait();
+        const usdcDecimals = 10 ** 17;  // fixme 6 for usdc
+        const parsedAmount = BigInt(_amount * usdcDecimals); // usdc has 6 decimals
+        const approve = await usdcContract.approve(contractAddress, parsedAmount);
+        approve.wait();
 
-        // FIXME: _amount * (1 - discount)
-        const parsedAmount = ethers.utils.parseEther(_amount);
-
-        const passId = await contract
-          .mintPass(parsePassType(_passType), {value: parsedAmount._hex});
-        // TODO: ipfs
+        const passId = await contract.mintPass(parsePassType(_passType));
         
         setIsLoading(true);
         await passId.wait();
@@ -250,6 +250,9 @@ export const TransactionsProvider = ({ children }) => {
 
         window.location.reload();
       } 
+      else {
+        console.log("No contract object");
+      }
     } catch (error) {
       console.log(error);
       console.log(currentAccount);
@@ -259,7 +262,9 @@ export const TransactionsProvider = ({ children }) => {
 
   const getCurrentUserNft = async (/*_addr*/) => {
     try {
+      console.log(1);
       if(/*ethereum*/ contract) {
+        console.log(2);
         const pass = await contract.getPlayerPass(currentAccount);
         const id = Number(pass[1]);
         console.log(pass[0] + " " + pass[1]);
@@ -271,7 +276,7 @@ export const TransactionsProvider = ({ children }) => {
           setUserNFT("");
           // setUserNFT({passType: 0, id: 0});
         }
-      } 
+      }
     } catch (error) {
       console.log(error);
       setUserNFT("");
